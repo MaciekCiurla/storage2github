@@ -2,9 +2,11 @@ name: Sync Azure Storage
 
 on:
   workflow_dispatch:
-
   schedule:
     - cron: '*/15 * * * *'
+
+permissions:
+  contents: write
 
 jobs:
   sync:
@@ -12,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Install AzCopy
         run: |
@@ -20,24 +22,25 @@ jobs:
           tar -xf azcopy.tar.gz
           sudo cp ./azcopy_linux_amd64_*/azcopy /usr/local/bin/
 
+      - name: Validate Azure SAS access
+        env:
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+          AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
+          AZURE_STORAGE_SAS: ${{ secrets.AZURE_STORAGE_SAS }}
+        run: |
+          azcopy list \
+            "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}?${AZURE_STORAGE_SAS}" \
+            --recursive
+
       - name: Download from Azure Storage
+        env:
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+          AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
+          AZURE_STORAGE_SAS: ${{ secrets.AZURE_STORAGE_SAS }}
         run: |
           azcopy copy \
-          "https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}?${{ secrets.AZURE_STORAGE_SAS }}" \
-          "./" \
-          --overwrite=true \
-          --recursive
-
-      - name: Commit changes
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git add .
-
-          git diff --cached --quiet || \
-          git commit -m "Automatic sync from Azure Storage"
-
-      - name: Push changes
-        run: |
-          git push
+            "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}?${AZURE_STORAGE_SAS}" \
+            "." \
+            --from-to=BlobLocal \
+            --recursive \
+            --overwrite=true
