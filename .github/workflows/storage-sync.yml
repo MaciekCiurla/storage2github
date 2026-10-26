@@ -45,4 +45,15 @@ jobs:
             --recursive \
             --overwrite=true \
             --log-level=INFO 
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "Automatic sync from Azure Storage"
+
+      - name: Push changes
+        run: |
+          git push
       
