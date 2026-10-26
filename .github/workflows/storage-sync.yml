@@ -38,6 +38,7 @@ jobs:
           AZURE_STORAGE_SAS: ${{ secrets.AZURE_STORAGE_SAS }}
         run: |
           mkdir -p ./azure-download
+          ls -l ./azure-download
           azcopy copy \
             "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}?${AZURE_STORAGE_SAS}" \
             "./azure-download" \
