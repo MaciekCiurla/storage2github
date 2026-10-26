@@ -1,0 +1,43 @@
+name: Sync Azure Storage
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '*/15 * * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install AzCopy
+        run: |
+          wget -O azcopy.tar.gz https://aka.ms/downloadazcopy-v10-linux
+          tar -xf azcopy.tar.gz
+          sudo cp ./azcopy_linux_amd64_*/azcopy /usr/local/bin/
+
+      - name: Download from Azure Storage
+        run: |
+          azcopy copy \
+          "https://${{ secrets.AZURE_STORAGE_ACCOUNT }}.blob.core.windows.net/${{ secrets.AZURE_STORAGE_CONTAINER }}?${{ secrets.AZURE_STORAGE_SAS }}" \
+          "./" \
+          --overwrite=true \
+          --recursive
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add .
+
+          git diff --cached --quiet || \
+          git commit -m "Automatic sync from Azure Storage"
+
+      - name: Push changes
+        run: |
+          git push
