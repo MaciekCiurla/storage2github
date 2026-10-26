@@ -37,9 +37,12 @@ jobs:
           AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
           AZURE_STORAGE_SAS: ${{ secrets.AZURE_STORAGE_SAS }}
         run: |
+          mkdir -p ./azure-download
           azcopy copy \
             "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}?${AZURE_STORAGE_SAS}" \
-            "." \
+            "./azure-download" \
             --from-to=BlobLocal \
             --recursive \
             --overwrite=true
+            --log-level=INFO
+      
