@@ -44,6 +44,6 @@ jobs:
             "./azure-download" \
             --from-to=BlobLocal \
             --recursive \
-            --overwrite=true
-            --log-level=INFO
+            --overwrite=true \
+            --log-level=INFO \
       
