@@ -30,8 +30,7 @@ jobs:
         run: |
           azcopy list \
             "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}?${AZURE_STORAGE_SAS}" \
-            --recursive
-
+            
       - name: Download from Azure Storage
         env:
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
