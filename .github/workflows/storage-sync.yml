@@ -45,5 +45,5 @@ jobs:
             --from-to=BlobLocal \
             --recursive \
             --overwrite=true \
-            --log-level=INFO \
+            --log-level=INFO 
       
