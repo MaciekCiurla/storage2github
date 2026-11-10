@@ -35,8 +35,10 @@ jobs:
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
           AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
         run: |
-          azcopy list \
-            "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}"
+          az storage container exists \
+            --account-name "$AZURE_STORAGE_ACCOUNT" \
+            --name "$AZURE_STORAGE_CONTAINER" \
+            --auth-mode login
 
       - name: Download from Azure Storage
         env:
@@ -44,13 +46,12 @@ jobs:
           AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
         run: |
           mkdir -p ./azure-download
-          azcopy copy \
-            "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}" \
-            "./azure-download" \
-            --from-to=BlobLocal \
-            --recursive \
-            --overwrite=true \
-            --log-level=INFO
+          az storage blob download-batch \
+            --account-name "$AZURE_STORAGE_ACCOUNT" \
+            --source "$AZURE_STORAGE_CONTAINER" \
+            --destination ./azure-download \
+            --auth-mode login \
+            --overwrite
 
       - name: Commit changes
         run: |
