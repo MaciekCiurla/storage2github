@@ -42,37 +42,38 @@ jobs:
             --name "$AZURE_STORAGE_CONTAINER" \
             --auth-mode login
 
-      - name: Download zipped files from Azure Storage
+      - name: Clear synced folders
+        run: |
+          rm -rf -- ./log ./config ./bin
+
+      - name: Download and extract archives
         env:
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
           AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
         run: |
-          mkdir -p ./azure-download
+          download_dir="$(mktemp -d)"
+          trap 'rm -rf "$download_dir"' EXIT
+
           az storage blob download-batch \
             --account-name "$AZURE_STORAGE_ACCOUNT" \
             --source "$AZURE_STORAGE_CONTAINER" \
-            --destination ./azure-download \
+            --destination "$download_dir" \
             --auth-mode login \
             --overwrite
 
-          # Ignore any non-zip files in the container root and keep only zip archives
-          find ./azure-download -maxdepth 1 -type f ! -name '*.zip' -delete
-
-      - name: Unzip each archive into its own folder
-        run: |
-          while IFS= read -r -d '' archive; do
-            base_name="$(basename "$archive" .zip)"
-            target_dir="./azure-download/$base_name"
-            mkdir -p "$target_dir"
-            unzip -o "$archive" -d "$target_dir"
-            rm -f "$archive"
-          done < <(find ./azure-download -maxdepth 1 -type f -name '*.zip' -print0)
+          for folder in log config bin; do
+            archive="$download_dir/$folder.zip"
+            if [ -f "$archive" ]; then
+              mkdir -p "./$folder"
+              unzip -o "$archive" -d "./$folder"
+            fi
+          done
 
       - name: Commit changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add -- azure-download
+          git add -A -- log config bin
           git diff --cached --quiet || git commit -m "Automatic sync from Azure Storage"
 
       - name: Push changes
