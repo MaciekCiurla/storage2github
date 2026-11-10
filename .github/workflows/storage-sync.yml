@@ -26,9 +26,11 @@ jobs:
 
       - name: Install AzCopy
         run: |
-          wget -O azcopy.tar.gz https://aka.ms/downloadazcopy-v10-linux
-          tar -xf azcopy.tar.gz
-          sudo cp ./azcopy_linux_amd64_*/azcopy /usr/local/bin/
+          temp_dir="$(mktemp -d)"
+          trap 'rm -rf "$temp_dir"' EXIT
+          wget -O "$temp_dir/azcopy.tar.gz" https://aka.ms/downloadazcopy-v10-linux
+          tar -xf "$temp_dir/azcopy.tar.gz" -C "$temp_dir"
+          sudo cp "$temp_dir"/azcopy_linux_amd64_*/azcopy /usr/local/bin/
 
       - name: Validate Azure access
         env:
@@ -40,7 +42,7 @@ jobs:
             --name "$AZURE_STORAGE_CONTAINER" \
             --auth-mode login
 
-      - name: Download from Azure Storage
+      - name: Download zipped files from Azure Storage
         env:
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
           AZURE_STORAGE_CONTAINER: ${{ secrets.AZURE_STORAGE_CONTAINER }}
@@ -53,11 +55,24 @@ jobs:
             --auth-mode login \
             --overwrite
 
+          # Ignore any non-zip files in the container root and keep only zip archives
+          find ./azure-download -maxdepth 1 -type f ! -name '*.zip' -delete
+
+      - name: Unzip each archive into its own folder
+        run: |
+          while IFS= read -r -d '' archive; do
+            base_name="$(basename "$archive" .zip)"
+            target_dir="./azure-download/$base_name"
+            mkdir -p "$target_dir"
+            unzip -o "$archive" -d "$target_dir"
+            rm -f "$archive"
+          done < <(find ./azure-download -maxdepth 1 -type f -name '*.zip' -print0)
+
       - name: Commit changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add .
+          git add -- azure-download
           git diff --cached --quiet || git commit -m "Automatic sync from Azure Storage"
 
       - name: Push changes
