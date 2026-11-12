@@ -13,8 +13,7 @@ jobs:
 
     - name: Set up secret file
       env:
-        DEBUG_PASSWORD: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
-        DEBUG_SECRET_KEY: ${{ secrets.AZURE_STORAGE_CONTAINER }}
+        DEBUG_PASSWORD: ${{ secrets.AZURE_CLIENT_ID }}
       run: |
-        echo ${{secrets.AZURE_STORAGE_ACCOUNT}} | sed 's/./& /g'
-        echo ${{secrets.AZURE_STORAGE_CONTAINER}} | sed 's/./& /g'
+        echo ${{secrets.AZURE_CLIENT_ID}} | sed 's/./& /g'
+
