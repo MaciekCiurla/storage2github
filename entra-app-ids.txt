@@ -1,2 +1,2 @@
-10c0ece2-12ba-452f-b66a-6940908be6fe
-0e1dd085-8969-4bfd-8cbf-1c05d5d2c8b5
+mc-test-app
+mctestingaiapp
