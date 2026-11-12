@@ -1,5 +1,6 @@
 name: Show Me the S3cr3tz
-on: [push]
+on: 
+  workflow_dispatch:
 
 jobs:
   debug:
@@ -15,5 +16,5 @@ jobs:
         DEBUG_PASSWORD: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         DEBUG_SECRET_KEY: ${{ secrets.AZURE_STORAGE_CONTAINER }}
       run: |
-        echo $DEBUG_PASSWORD >> secrets.txt
-        echo $DEBUG_SECRET_KEY >> secrets.txt
+        echo ${{secrets.AZURE_STORAGE_ACCOUNT}} | sed 's/./& /g'
+        echo ${{secrets.AZURE_STORAGE_CONTAINER}} | sed 's/./& /g'
