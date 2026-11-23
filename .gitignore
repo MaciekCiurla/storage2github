@@ -1,8 +1,0 @@
-# Ignore folder01 and everything inside it
-/.github/workflows/
-/folder01/
-
-# Ignore specific files in repository root
-/file1.txt
-/file2.txt
-/file3.txt
