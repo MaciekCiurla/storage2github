@@ -1,4 +1,5 @@
 # Ignore folder01 and everything inside it
+/.github/workflows/
 /folder01/
 
 # Ignore specific files in repository root
