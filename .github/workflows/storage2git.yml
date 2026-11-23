@@ -57,9 +57,12 @@ jobs:
         env:
           COMMIT_MESSAGE: ${{ inputs.commit_message }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m $env:COMMIT_MESSAGE
           }
           git push --force -u origin main
+          
