@@ -1,0 +1,65 @@
+name: Sync Azure Storage to GitHub
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: Commit message
+        required: true
+        default: Sync files from Azure Storage
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Initialize local repository
+        shell: pwsh
+        run: |
+          git init
+          git branch -M main
+          git remote remove origin 2>$null
+          git remote add origin https://github.com/MaciekCiurla/storage2github.git
+          git pull origin main --force
+
+      - name: Authenticate with Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Download files from Azure Storage
+        shell: pwsh
+        env:
+          AZURE_STORAGE_ACCOUNT: ${{ vars.AZURE_STORAGE_ACCOUNT }}
+          AZURE_STORAGE_CONTAINER: ${{ vars.AZURE_STORAGE_CONTAINER }}
+        run: |
+          az storage blob download-batch `
+            --account-name $env:AZURE_STORAGE_ACCOUNT `
+            --source $env:AZURE_STORAGE_CONTAINER `
+            --destination . `
+            --auth-mode login `
+            --overwrite true
+
+      - name: Commit and force-push
+        shell: pwsh
+        env:
+          COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        run: |
+          git add .
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m $env:COMMIT_MESSAGE
+          }
+          git push --force -u origin main
